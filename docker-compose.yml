@@ -1,0 +1,39 @@
+services:
+  odoo:
+    container_name: odoo
+    image: odoo:17.0
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8069:8069"
+    volumes:
+      - ./etc/odoo:/etc/odoo
+      - ./addons:/mnt/extra-addons
+      - ./var/lib/odoo:/var/lib/odoo
+    depends_on:
+      odoo-postgres:
+        condition: service_healthy
+    networks:
+      - odoo-networks
+
+  odoo-postgres:
+    container_name: odoo-postgres
+    image: postgres:16.1
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - odoo-db-data:/var/lib/postgresql/data/pgdata
+    networks:
+      - odoo-networks
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "odoo", "-d", "postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  odoo-db-data:
+
+networks:
+  odoo-networks:
+    driver: bridge
